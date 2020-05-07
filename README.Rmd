@@ -2,10 +2,18 @@
 title: "May Institue 2020"
 author: "Laurent Gatto"
 date: "7 May 2020"
-output: html_document
+output:
+  BiocStyle::html_document:
+    toc_float: true
 ---
 
-## Instroduction
+
+
+```{r style, echo = FALSE, results = 'asis'}
+BiocStyle::markdown()
+```
+
+# Instroduction
 
 These are the live notes from my talk at the (remote) May Institute
 2020. I will present material from 
@@ -32,9 +40,7 @@ Questions about your data/analyses/issues:
 - MSnbase issues on GitHub: https://github.com/lgatto/MSnbase
 
 
-## On-disk backend
+# On-disk backend
 
-## Prototyping: MSnbaseBoxCar
-
-
+# Prototyping: MSnbaseBoxCar
 
