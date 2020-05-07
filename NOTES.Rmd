@@ -27,7 +27,7 @@ See also
 
 - The `MSnbase` home page: http://lgatto.github.io/MSnbase/
 
--  [MSnbase - an R/Bioconductor package for isobaric tagged mass
+- [MSnbase - an R/Bioconductor package for isobaric tagged mass
    spectrometry data visualisation, processing and
    quantitation](https://academic.oup.com/bioinformatics/article/28/2/288/199094). Gatto
    L. and Lilley K.S. Bioinformatics, 28(2), 288-289, 2012.
@@ -42,5 +42,199 @@ Questions about your data/analyses/issues:
 
 # On-disk backend
 
+
+```{r}
+f <- msdata::proteomics(pattern = "201412", full.names = TRUE)
+basename(f)
+```
+
+```{r, message = FALSE}
+library(MSnbase)
+library(magrittr)
+```
+
+Reading on-disk is faster. See **Figure 1a** in the pre-print.
+
+```{r}
+system.time(x_mem <- readMSData(f, mode = "inMemory"))
+system.time(x_dsk <- readMSData(f, mode = "onDisk"))
+```
+
+The `MSnExp` class
+
+```{r}
+x_dsk
+
+fData(x_dsk)
+fvarLabels(x_dsk)
+
+sp <- x_dsk[[1]]
+sp
+head(mz(sp))
+head(intensity(sp))
+plot(sp)
+```
+
+The on-disk data contains all spectra
+
+```{r}
+length(x_dsk)
+length(x_mem)
+table(msLevel(x_dsk))
+```
+
+On-disk data uses less RAM. See **Figure 1b** in the pre-print.
+
+```{r}
+pryr::object_size(x_mem)
+pryr::object_size(x_dsk)
+```
+
+```{r}
+x_dsk2 <- filterMsLevel(x_dsk, 2L)
+```
+
+Access to raw data is faster when already in RAM. See **Figure 1d** in
+pre-print.
+
+```{r}
+system.time(x_dsk[[1]])
+system.time(x_mem[[1]])
+```
+
+**Filtering**: retention time between 1000 and 3000 seconds
+
+```{r}
+chr1 <- chromatogram(x_dsk)
+chr1
+plot(chr1)
+```
+
+**Filtering**: keep TMT6 MZ range
+
+```{r}
+plot(x_dsk2[[1227]], reporters = TMT6, full = TRUE)
+TMT6
+range(mz(TMT6))
+```
+
+**Filtering**: keep 50% spectra with highest precursor ion intensity
+
+```{r}
+median(precursorIntensity(x_dsk2))
+```
+
+
+```{r}
+filter_ms <- function(x) {
+   x <- x %>% 
+      filterRt(c(1000, 3000)) %>% 
+      filterMz(c(120, 135))
+   x[precursorIntensity(x) > 11000000, ]
+}
+```
+
+Filtering on-disk is much faster thank to lazy evaluation. See
+**Figure 1c** in the pre-print.
+
+```{r, warning = FALSE}
+x_filt <- filter_ms(x_dsk2)
+filter_ms(x_mem)
+```
+
+
+```{r}
+x_filt[[1227]]
+```
+
+
+```{r, eval=FALSE}
+writeMSData
+```
+
+
 # Prototyping: MSnbaseBoxCar
+
+- Reference: [BoxCar acquisition method enables single-shot proteomics
+  at a depth of 10,000 proteins in 100
+  minutes](https://www.nature.com/articles/s41592-018-0003-5).
+
+- Package home page: http://lgatto.github.io/MSnbaseBoxCar/
+
+
+```{r}
+library(MSnbaseBoxCar)
+
+bcf <- 
+   dir(system.file("extdata", package = "MSnbaseBoxCar"),
+    pattern = "boxcar.mzML", 
+    full.names = TRUE)
+```
+
+Read the data
+
+```{r}
+bc <- readMSData(bcf, mode = "onDisk") 
+bc
+```
+
+First full spectrum and 3 first BoxCar spectra
+
+```{r}
+p <- plot(bc[1:4])
+```
+
+Identify sets of BoxCar spectra
+
+```{r}
+fData(bc)$filterString
+
+tmp1 <- bc_groups(bc)
+fData(tmp1)$bc_groups
+```
+
+Remove non-BoxCar spectra
+
+```{r}
+tmp2 <- filterBoxCar(tmp1)
+fData(tmp2)$bc_groups
+tmp2
+```
+
+
+```{r, warning = FALSE}
+bc_plotly(tmp2[1:3])
+```
+
+Remove peaks outside of BoxCar segments
+
+```{r, warning = FALSE}
+tmp3 <- bc_zero_out_box(tmp2)
+bc_plotly(tmp3[1:3])
+```
+
+Combine BoxCar spectra and segments into a new full scan
+
+```{r}
+res <- combineSpectra(tmp3, 
+               fcol = "bc_groups",
+               method = boxcarCombine)
+res
+```
+
+```{r, eval=FALSE}
+writeMSData(res, file = "boxcar2.mzML")
+```
+
+Putting it all together with `%>%`
+
+```{r}
+bc2 <- bc %>% 
+   bc_groups() %>% 
+   filterBoxCar() %>% 
+   bc_zero_out_box() %>% 
+   combineSpectra(fcol = "bc_groups",
+                  method = boxcarCombine)
+
+```
 
