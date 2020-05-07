@@ -1,6 +1,5 @@
-README.html: README.Rmd
+docs/index.html: NOTES.html
+	mv NOTES.html docs/index.html
+
+NOTES.html: NOTES.Rmd
 	Rscript -e "rmarkdown::render('$^')"
-
-
-docs/index.html: README.html
-	mv README.html docs/index.html

@@ -1,5 +1,5 @@
 ---
-title: "May Institue 2020"
+title: "May Institute 2020"
 author: "Laurent Gatto"
 date: "7 May 2020"
 output:
@@ -13,7 +13,7 @@ output:
 BiocStyle::markdown()
 ```
 
-# Instroduction
+# Introduction
 
 These are the live notes from my talk at the (remote) May Institute
 2020. I will present material from 
